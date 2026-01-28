@@ -210,21 +210,32 @@ local function Load()
 		end
 	end)
 
-	ServiceConnections.InputEnded = Connect(UserInputService.InputEnded, function(i)
-		if i.UserInputType == Environment.Settings.TriggerKey then
+	ServiceConnections.InputBegan = Connect(UserInputService.InputBegan, function(i, gp)
+	if gp or Typing then return end
+
+	-- 🔥 GLOBAL TOGGLE (C)
+	if i.UserInputType == Enum.UserInputType.Keyboard
+	and i.KeyCode == Environment.Settings.ToggleKey then
+
+		Environment.Settings.Enabled = not Environment.Settings.Enabled
+
+		if not Environment.Settings.Enabled then
 			Running = false
 			CancelLock()
+
+			setrenderproperty(Environment.FOVCircle, "Visible", false)
+			setrenderproperty(Environment.FOVCircleOutline, "Visible", false)
 		end
-	end)
 
-	ServiceConnections.Focus = Connect(UserInputService.TextBoxFocused, function()
-		Typing = true
-	end)
+		return
+	end
 
-	ServiceConnections.Unfocus = Connect(UserInputService.TextBoxFocusReleased, function()
-		Typing = false
-	end)
-end
+	-- 🎯 AIM TRIGGER (RMB)
+	if i.UserInputType == Environment.Settings.TriggerKey
+	and Environment.Settings.Enabled then
+		Running = true
+	end
+end)
 
 --// Exit
 function Environment.Exit(self)
