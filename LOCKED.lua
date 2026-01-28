@@ -1,233 +1,141 @@
---[[
-
-	Universal Aimbot Module by Exunys © CC0 1.0 Universal (2023 - 2024)
-	TOGGLE ADDED: Press C to enable / disable entire aimbot
-
+--[[ 
+    Universal Aimbot Module by Exunys © CC0 1.0 Universal (2023 - 2024)
+    TOGGLE ADDED: Press C to enable / disable entire aimbot
 ]]
 
 --// Cache
-local game, workspace = game, workspace
-local getrawmetatable, setmetatable, pcall, getgenv, next, tick =
-	getrawmetatable, setmetatable, pcall, getgenv, next, tick
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
 
-local Vector2new, Vector3zero, CFramenew, Color3fromRGB, Color3fromHSV =
-	Vector2.new, Vector3.zero, CFrame.new, Color3.fromRGB, Color3.fromHSV
-
-local Drawingnew, TweenInfonew = Drawing.new, TweenInfo.new
-local mousemoverel = mousemoverel or (Input and Input.MouseMove)
-local tablefind, tableremove = table.find, table.remove
-local stringlower, stringsub = string.lower, string.sub
-local mathclamp = math.clamp
-
---// Metatable fallback
-local GameMetatable = getrawmetatable and getrawmetatable(game) or {
-	__index = function(self, k) return self[k] end,
-	__newindex = function(self, k, v) self[k] = v end
-}
-
-local __index = GameMetatable.__index
-local __newindex = GameMetatable.__newindex
-
-local getrenderproperty = getrenderproperty or __index
-local setrenderproperty = setrenderproperty or __newindex
-
-local GetService = __index(game, "GetService")
-
---// Services
-local RunService = GetService(game, "RunService")
-local UserInputService = GetService(game, "UserInputService")
-local TweenService = GetService(game, "TweenService")
-local Players = GetService(game, "Players")
-
---// Objects
-local LocalPlayer = __index(Players, "LocalPlayer")
-local Camera = __index(workspace, "CurrentCamera")
-
-local FindFirstChild, FindFirstChildOfClass =
-	__index(game, "FindFirstChild"),
-	__index(game, "FindFirstChildOfClass")
-
-local GetDescendants = __index(game, "GetDescendants")
-local WorldToViewportPoint = __index(Camera, "WorldToViewportPoint")
-local GetPartsObscuringTarget = __index(Camera, "GetPartsObscuringTarget")
-local GetMouseLocation = __index(UserInputService, "GetMouseLocation")
-local GetPlayers = __index(Players, "GetPlayers")
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
 
 --// State
-local RequiredDistance = 2000
-local Typing = false
 local Running = false
-local ServiceConnections = {}
-local Animation
+local Typing = false
 local OriginalSensitivity
+local LockedPlayer = nil
+local Animation = nil
+local RequiredDistance = 2000
 
-local Connect = __index(game, "DescendantAdded").Connect
-local Disconnect
-
---// Prevent double load
-if ExunysDeveloperAimbot and ExunysDeveloperAimbot.Exit then
-	ExunysDeveloperAimbot:Exit()
-end
-
---// Environment
-getgenv().ExunysDeveloperAimbot = {
-	DeveloperSettings = {
-		UpdateMode = "RenderStepped",
-		TeamCheckOption = "TeamColor",
-		RainbowSpeed = 1
-	},
-
-	Settings = {
-		Enabled = true,
-
-		TeamCheck = false,
-		AliveCheck = true,
-		WallCheck = false,
-
-		OffsetToMoveDirection = false,
-		OffsetIncrement = 15,
-
-		Sensitivity = 0,
-		Sensitivity2 = 3.5,
-
-		LockMode = 1,
-		LockPart = "Head",
-
-		TriggerKey = Enum.UserInputType.MouseButton2,
-		Toggle = false,
-
-		ToggleKey = Enum.KeyCode.C -- 🔥 GLOBAL TOGGLE
-	},
-
-	FOVSettings = {
-		Enabled = true,
-		Visible = true,
-		Radius = 90,
-		NumSides = 60,
-		Thickness = 1,
-		Transparency = 1,
-		Filled = false,
-		RainbowColor = false,
-		RainbowOutlineColor = false,
-		Color = Color3fromRGB(255,255,255),
-		OutlineColor = Color3fromRGB(0,0,0),
-		LockedColor = Color3fromRGB(255,150,150)
-	},
-
-	Blacklisted = {},
-	FOVCircleOutline = Drawingnew("Circle"),
-	FOVCircle = Drawingnew("Circle")
+--// Settings
+local Settings = {
+    Enabled = true,
+    TriggerKey = Enum.UserInputType.MouseButton2, -- RMB to aim
+    ToggleKey = Enum.KeyCode.C,                  -- C to toggle
+    LockPart = "Head",
+    Sensitivity = 0,
+    Sensitivity2 = 3.5
 }
 
-local Environment = getgenv().ExunysDeveloperAimbot
+--// FOV Circle
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Visible = false
+FOVCircle.Radius = 90
+FOVCircle.Color = Color3.fromRGB(255,255,255)
+FOVCircle.Thickness = 1
 
-setrenderproperty(Environment.FOVCircle, "Visible", false)
-setrenderproperty(Environment.FOVCircleOutline, "Visible", false)
-
---// Helpers
-local function FixUsername(str)
-	for _, v in next, GetPlayers(Players) do
-		if stringsub(stringlower(v.Name), 1, #str) == stringlower(str) then
-			return v.Name
-		end
-	end
-end
-
-local function GetRainbowColor()
-	local s = Environment.DeveloperSettings.RainbowSpeed
-	return Color3fromHSV(tick() % s / s, 1, 1)
-end
-
-local function ConvertVector(v)
-	return Vector2new(v.X, v.Y)
-end
-
+--// Helper Functions
 local function CancelLock()
-	Environment.Locked = nil
-	setrenderproperty(Environment.FOVCircle, "Color", Environment.FOVSettings.Color)
-	__newindex(UserInputService, "MouseDeltaSensitivity", OriginalSensitivity)
-	if Animation then Animation:Cancel() end
+    LockedPlayer = nil
+    FOVCircle.Color = Color3.fromRGB(255,255,255)
+    if Animation then
+        Animation:Cancel()
+        Animation = nil
+    end
+    if OriginalSensitivity then
+        UserInputService.MouseDeltaSensitivity = OriginalSensitivity
+    end
+end
+
+local function GetMouseVector()
+    local pos = UserInputService:GetMouseLocation()
+    return Vector2.new(pos.X, pos.Y)
 end
 
 local function GetClosestPlayer()
-	local Settings = Environment.Settings
-	local LockPart = Settings.LockPart
+    local closestDist = Settings.Enabled and FOVCircle.Radius or 2000
+    local closest = nil
+    for _, plr in next, Players:GetPlayers() do
+        if plr == LocalPlayer then continue end
+        local char = plr.Character
+        if not char then continue end
+        local part = char:FindFirstChild(Settings.LockPart)
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        if not part or not humanoid or humanoid.Health <= 0 then continue end
 
-	if not Environment.Locked then
-		RequiredDistance = Environment.FOVSettings.Enabled and Environment.FOVSettings.Radius or 2000
-
-		for _, v in next, GetPlayers(Players) do
-			local c = v.Character
-			local h = c and FindFirstChildOfClass(c, "Humanoid")
-
-			if v ~= LocalPlayer and c and h and FindFirstChild(c, LockPart)
-			and not tablefind(Environment.Blacklisted, v.Name) then
-
-				if Settings.AliveCheck and h.Health <= 0 then continue end
-				if Settings.TeamCheck and v.TeamColor == LocalPlayer.TeamColor then continue end
-
-				local pos = c[LockPart].Position
-				local vec, onScreen = WorldToViewportPoint(Camera, pos)
-				local dist = (GetMouseLocation(UserInputService) - ConvertVector(vec)).Magnitude
-
-				if dist < RequiredDistance and onScreen then
-					RequiredDistance = dist
-					Environment.Locked = v
-				end
-			end
-		end
-	else
-		CancelLock()
-	end
+        local vec, onScreen = Camera:WorldToViewportPoint(part.Position)
+        vec = Vector2.new(vec.X, vec.Y)
+        local dist = (GetMouseVector() - vec).Magnitude
+        if dist < closestDist and onScreen then
+            closestDist = dist
+            closest = plr
+        end
+    end
+    LockedPlayer = closest
 end
 
---// Load
-local function Load()
-	OriginalSensitivity = UserInputService.MouseDeltaSensitivity
-
-	ServiceConnections.Render = Connect(RunService.RenderStepped, function()
-		if not Environment.Settings.Enabled then return end
-		if Running then GetClosestPlayer() end
-	end)
-
-	ServiceConnections.InputBegan = Connect(UserInputService.InputBegan, function(i, gp)
-	if gp or Typing then return end
-
-	-- ✅ GLOBAL TOGGLE (C)
-	if i.UserInputType == Enum.UserInputType.Keyboard
-	and i.KeyCode == Environment.Settings.ToggleKey then
-
-		Environment.Settings.Enabled = not Environment.Settings.Enabled
-
-		if not Environment.Settings.Enabled then
-			Running = false
-			CancelLock()
-			setrenderproperty(Environment.FOVCircle, "Visible", false)
-			setrenderproperty(Environment.FOVCircleOutline, "Visible", false)
-		end
-
-		return
-	end
-
-	-- 🎯 AIM TRIGGER (RMB)
-	if i.UserInputType == Environment.Settings.TriggerKey
-	and Environment.Settings.Enabled then
-		Running = true
-	end
+--// Connections
+RunService.RenderStepped:Connect(function()
+    FOVCircle.Position = GetMouseVector()
+    if Running and Settings.Enabled then
+        GetClosestPlayer()
+        if LockedPlayer and LockedPlayer.Character and LockedPlayer.Character:FindFirstChild(Settings.LockPart) then
+            local targetPos = LockedPlayer.Character[Settings.LockPart].Position
+            if Settings.Sensitivity > 0 then
+                Animation = TweenService:Create(Camera, TweenInfo.new(Settings.Sensitivity), {CFrame = CFrame.new(Camera.CFrame.Position, targetPos)})
+                Animation:Play()
+            else
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPos)
+            end
+        end
+    else
+        CancelLock()
+    end
 end)
 
---// Exit
-function Environment.Exit(self)
-	for _, c in next, ServiceConnections do
-		pcall(function() c:Disconnect() end)
-	end
-	self.FOVCircle:Remove()
-	self.FOVCircleOutline:Remove()
-	getgenv().ExunysDeveloperAimbot = nil
-end
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp or Typing then return end
 
-Environment.Load = Load
-setmetatable(Environment, { __call = Load })
+    -- Toggle C
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Settings.ToggleKey then
+        Settings.Enabled = not Settings.Enabled
+        if not Settings.Enabled then
+            Running = false
+            CancelLock()
+            FOVCircle.Visible = false
+        else
+            FOVCircle.Visible = true
+        end
+        return
+    end
 
-Load()
-return Environment
+    -- RMB Trigger
+    if Settings.Enabled and input.UserInputType == Settings.TriggerKey then
+        Running = true
+        FOVCircle.Visible = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Settings.TriggerKey then
+        Running = false
+        CancelLock()
+        FOVCircle.Visible = Settings.Enabled
+    end
+end)
+
+UserInputService.TextBoxFocused:Connect(function()
+    Typing = true
+end)
+
+UserInputService.TextBoxFocusReleased:Connect(function()
+    Typing = false
+end)
+
+--// Start
+OriginalSensitivity = UserInputService.MouseDeltaSensitivity
+FOVCircle.Visible = Settings.Enabled
