@@ -191,29 +191,9 @@ local function Load()
 	end)
 
 	ServiceConnections.InputBegan = Connect(UserInputService.InputBegan, function(i, gp)
-		if gp or Typing then return end
-
-		-- 🔥 GLOBAL TOGGLE
-		if i.KeyCode == Environment.Settings.ToggleKey then
-			Environment.Settings.Enabled = not Environment.Settings.Enabled
-			if not Environment.Settings.Enabled then
-				Running = false
-				CancelLock()
-				setrenderproperty(Environment.FOVCircle, "Visible", false)
-				setrenderproperty(Environment.FOVCircleOutline, "Visible", false)
-			end
-			return
-		end
-
-		if i.UserInputType == Environment.Settings.TriggerKey then
-			Running = true
-		end
-	end)
-
-	ServiceConnections.InputBegan = Connect(UserInputService.InputBegan, function(i, gp)
 	if gp or Typing then return end
 
-	-- 🔥 GLOBAL TOGGLE (C)
+	-- ✅ GLOBAL TOGGLE (C)
 	if i.UserInputType == Enum.UserInputType.Keyboard
 	and i.KeyCode == Environment.Settings.ToggleKey then
 
@@ -222,7 +202,6 @@ local function Load()
 		if not Environment.Settings.Enabled then
 			Running = false
 			CancelLock()
-
 			setrenderproperty(Environment.FOVCircle, "Visible", false)
 			setrenderproperty(Environment.FOVCircleOutline, "Visible", false)
 		end
