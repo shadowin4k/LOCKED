@@ -1,20 +1,50 @@
---[[
+--[[ Universal Aimbot Module by Exunys © CC0 1.0 Universal (2023 - 2024) ]]
+--[[ https://github.com/Exunys ]]
 
-	Universal Aimbot Module by Exunys © CC0 1.0 Universal (2023 - 2024)
-	https://github.com/Exunys
+local _G = getgenv()
+local game = game
+local workspace = workspace
 
-]]
+--// Obfuscated Variable Declarations
+local function obfus_getrawmetatable() return getrawmetatable end
+local function obfus_getmetatable() return getmetatable end
+local function obfus_setmetatable() return setmetatable end
+local function obfus_pcall() return pcall end
+local function obfus_getgenv() return getgenv end
+local function obfus_next() return next end
+local function obfus_tick() return tick end
 
---// Cache
+local _A = {obfus_getrawmetatable(), obfus_getmetatable(), obfus_setmetatable(), obfus_pcall(), obfus_getgenv(), obfus_next(), obfus_tick()}
+local getrawmetatable, getmetatable, setmetatable, pcall, getgenv, next, tick = _A[1](), _A[2](), _A[3](), _A[4](), _A[5](), _A[6](), _A[7]()
 
-local game, workspace = game, workspace
-local getrawmetatable, getmetatable, setmetatable, pcall, getgenv, next, tick = getrawmetatable, getmetatable, setmetatable, pcall, getgenv, next, tick
-local Vector2new, Vector3zero, CFramenew, Color3fromRGB, Color3fromHSV, Drawingnew, TweenInfonew = Vector2.new, Vector3.zero, CFrame.new, Color3.fromRGB, Color3.fromHSV, Drawing.new, TweenInfo.new
-local getupvalue, mousemoverel, tablefind, tableremove, stringlower, stringsub, mathclamp = debug.getupvalue, mousemoverel or (Input and Input.MouseMove), table.find, table.remove, string.lower, string.sub, math.clamp
+--// Obfuscated Vector Functions
+local function obfus_Vector2new() return Vector2.new end
+local function obfus_Vector3zero() return Vector3.zero end
+local function obfus_CFramenew() return CFrame.new end
+local function obfus_Color3fromRGB() return Color3.fromRGB end
+local function obfus_Color3fromHSV() return Color3.fromHSV end
+local function obfus_Drawingnew() return Drawing.new end
+local function obfus_TweenInfonew() return TweenInfo.new end
 
+--// Obfuscated Function Storage
+local _B = {obfus_Vector2new(), obfus_Vector3zero(), obfus_CFramenew(), obfus_Color3fromRGB(), obfus_Color3fromHSV(), obfus_Drawingnew(), obfus_TweenInfonew()}
+local Vector2new, Vector3zero, CFramenew, Color3fromRGB, Color3fromHSV, Drawingnew, TweenInfonew = _B[1](), _B[2](), _B[3](), _B[4](), _B[5](), _B[6](), _B[7]()
+
+--// Obfuscated Helper Functions
+local function obfus_getupvalue() return debug.getupvalue end
+local function obfus_mousemoverel() return mousemoverel or (Input and Input.MouseMove) end
+local function obfus_tablefind() return table.find end
+local function obfus_tableremove() return table.remove end
+local function obfus_stringlower() return string.lower end
+local function obfus_stringsub() return string.sub end
+local function obfus_mathclamp() return math.clamp end
+
+--// Obfuscated Storage Table
+local _C = {obfus_getupvalue(), obfus_mousemoverel(), obfus_tablefind(), obfus_tableremove(), obfus_stringlower(), obfus_stringsub(), obfus_mathclamp()}
+local getupvalue, mousemoverel, tablefind, tableremove, stringlower, stringsub, mathclamp = _C[1](), _C[2](), _C[3](), _C[4](), _C[5](), _C[6](), _C[7]()
+
+--// Obfuscated Metatable
 local GameMetatable = getrawmetatable and getrawmetatable(game) or {
-	-- Auxillary functions - if the executor doesn't support "getrawmetatable".
-
 	__index = function(self, Index)
 		return self[Index]
 	end,
@@ -24,6 +54,7 @@ local GameMetatable = getrawmetatable and getrawmetatable(game) or {
 	end
 }
 
+--// Obfuscated Property Accessors
 local __index = GameMetatable.__index
 local __newindex = GameMetatable.__newindex
 
@@ -31,15 +62,13 @@ local getrenderproperty, setrenderproperty = getrenderproperty or __index, setre
 
 local GetService = __index(game, "GetService")
 
---// Services
-
+--// Obfuscated Services
 local RunService = GetService(game, "RunService")
 local UserInputService = GetService(game, "UserInputService")
 local TweenService = GetService(game, "TweenService")
 local Players = GetService(game, "Players")
 
---// Service Methods
-
+--// Obfuscated Service Methods
 local LocalPlayer = __index(Players, "LocalPlayer")
 local Camera = __index(workspace, "CurrentCamera")
 
@@ -50,47 +79,21 @@ local GetPartsObscuringTarget = __index(Camera, "GetPartsObscuringTarget")
 local GetMouseLocation = __index(UserInputService, "GetMouseLocation")
 local GetPlayers = __index(Players, "GetPlayers")
 
---// Variables
-
+--// Obfuscated Variables
 local RequiredDistance, Typing, Running, ServiceConnections, Animation, OriginalSensitivity = 2000, false, false, {}
 local Connect, Disconnect = __index(game, "DescendantAdded").Connect
 
---[[
-local Degrade = false
-
-do
-	xpcall(function()
-		local TemporaryDrawing = Drawingnew("Line")
-		getrenderproperty = getupvalue(getmetatable(TemporaryDrawing).__index, 4)
-		setrenderproperty = getupvalue(getmetatable(TemporaryDrawing).__newindex, 4)
-		TemporaryDrawing.Remove(TemporaryDrawing)
-	end, function()
-		Degrade, getrenderproperty, setrenderproperty = true, function(Object, Key)
-			return Object[Key]
-		end, function(Object, Key, Value)
-			Object[Key] = Value
-		end
-	end)
-
-	local TemporaryConnection = Connect(__index(game, "DescendantAdded"), function() end)
-	Disconnect = TemporaryConnection.Disconnect
-	Disconnect(TemporaryConnection)
-end
-]]
-
---// Checking for multiple processes
-
+--// Obfuscated Process Check
 if ExunysDeveloperAimbot and ExunysDeveloperAimbot.Exit then
 	ExunysDeveloperAimbot:Exit()
 end
 
---// Environment
-
+--// Obfuscated Environment
 getgenv().ExunysDeveloperAimbot = {
 	DeveloperSettings = {
 		UpdateMode = "RenderStepped",
 		TeamCheckOption = "TeamColor",
-		RainbowSpeed = 1 -- Bigger = Slower
+		RainbowSpeed = 1
 	},
 
 	Settings = {
@@ -103,11 +106,11 @@ getgenv().ExunysDeveloperAimbot = {
 		OffsetToMoveDirection = false,
 		OffsetIncrement = 15,
 
-		Sensitivity = 0, -- Animation length (in seconds) before fully locking onto target
-		Sensitivity2 = 3.5, -- mousemoverel Sensitivity
+		Sensitivity = 0,
+		Sensitivity2 = 3.5,
 
-		LockMode = 1, -- 1 = CFrame; 2 = mousemoverel
-		LockPart = "Head", -- Body part to lock on
+		LockMode = 1,
+		LockPart = "Head",
 
 		TriggerKey = Enum.UserInputType.MouseButton2,
 		Toggle = false
@@ -141,8 +144,7 @@ local Environment = getgenv().ExunysDeveloperAimbot
 setrenderproperty(Environment.FOVCircle, "Visible", false)
 setrenderproperty(Environment.FOVCircleOutline, "Visible", false)
 
---// Core Functions
-
+--// Obfuscated Core Functions
 local FixUsername = function(String)
 	local Result
 
@@ -170,7 +172,7 @@ end
 local CancelLock = function()
 	Environment.Locked = nil
 
-	local FOVCircle = Environment.FOVCircle--Degrade and Environment.FOVCircle or Environment.FOVCircle.__OBJECT
+	local FOVCircle = Environment.FOVCircle
 
 	setrenderproperty(FOVCircle, "Color", Environment.FOVSettings.Color)
 	__newindex(UserInputService, "MouseDeltaSensitivity", OriginalSensitivity)
@@ -223,7 +225,7 @@ local GetClosestPlayer = function()
 				end
 			end
 		end
-	elseif (GetMouseLocation(UserInputService) - ConvertVector(WorldToViewportPoint(Camera, __index(__index(__index(Environment.Locked, "Character"), LockPart), "Position")))).Magnitude > RequiredDistance then
+	elseif (GetMouseLocation(UserInputService) - ConvertVector(WorldToViewportPoint(Camera, __index(__index(Environment.Locked, "Character"), LockPart), "Position")))).Magnitude > RequiredDistance then
 		CancelLock()
 	end
 end
@@ -232,12 +234,6 @@ local Load = function()
 	OriginalSensitivity = __index(UserInputService, "MouseDeltaSensitivity")
 
 	local Settings, FOVCircle, FOVCircleOutline, FOVSettings, Offset = Environment.Settings, Environment.FOVCircle, Environment.FOVCircleOutline, Environment.FOVSettings
-
-	--[[
-	if not Degrade then
-		FOVCircle, FOVCircleOutline = FOVCircle.__OBJECT, FOVCircleOutline.__OBJECT
-	end
-	]]
 
 	ServiceConnections.RenderSteppedConnection = Connect(__index(RunService, Environment.DeveloperSettings.UpdateMode), function()
 		local OffsetToMoveDirection, LockPart = Settings.OffsetToMoveDirection, Settings.LockPart
@@ -292,110 +288,7 @@ local Load = function()
 		end
 	end)
 
-	ServiceConnections.InputBeganConnection = Connect(__index(UserInputService, "InputBegan"), function(Input)
-		local TriggerKey, Toggle = Settings.TriggerKey, Settings.Toggle
-
-		if Typing then
-			return
-		end
-
-		if Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode == TriggerKey or Input.UserInputType == TriggerKey then
-			if Toggle then
-				Running = not Running
-
-				if not Running then
-					CancelLock()
-				end
-			else
-				Running = true
-			end
-		end
-	end)
-
-	ServiceConnections.InputEndedConnection = Connect(__index(UserInputService, "InputEnded"), function(Input)
-		local TriggerKey, Toggle = Settings.TriggerKey, Settings.Toggle
-
-		if Toggle or Typing then
-			return
-		end
-
-		if Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode == TriggerKey or Input.UserInputType == TriggerKey then
-			Running = false
-			CancelLock()
-		end
-	end)
-end
-
---// Typing Check
-
-ServiceConnections.TypingStartedConnection = Connect(__index(UserInputService, "TextBoxFocused"), function()
-	Typing = true
-end)
-
-ServiceConnections.TypingEndedConnection = Connect(__index(UserInputService, "TextBoxFocusReleased"), function()
-	Typing = false
-end)
-
---// Functions
-
-function Environment.Exit(self) -- METHOD | ExunysDeveloperAimbot:Exit(<void>)
-	assert(self, "EXUNYS_AIMBOT-V3.Exit: Missing parameter #1 \"self\" <table>.")
-
-	for Index, _ in next, ServiceConnections do
-		Disconnect(ServiceConnections[Index])
-	end
-
-	Load = nil; ConvertVector = nil; CancelLock = nil; GetClosestPlayer = nil; GetRainbowColor = nil; FixUsername = nil
-
-	self.FOVCircle:Remove()
-	self.FOVCircleOutline:Remove()
-	getgenv().ExunysDeveloperAimbot = nil
-end
-
-function Environment.Restart() -- ExunysDeveloperAimbot.Restart(<void>)
-	for Index, _ in next, ServiceConnections do
-		Disconnect(ServiceConnections[Index])
-	end
-
-	Load()
-end
-
-function Environment.Blacklist(self, Username) -- METHOD | ExunysDeveloperAimbot:Blacklist(<string> Player Name)
-	assert(self, "EXUNYS_AIMBOT-V3.Blacklist: Missing parameter #1 \"self\" <table>.")
-	assert(Username, "EXUNYS_AIMBOT-V3.Blacklist: Missing parameter #2 \"Username\" <string>.")
-
-	Username = FixUsername(Username)
-
-	assert(self, "EXUNYS_AIMBOT-V3.Blacklist: User "..Username.." couldn't be found.")
-
-	self.Blacklisted[#self.Blacklisted + 1] = Username
-end
-
-function Environment.Whitelist(self, Username) -- METHOD | ExunysDeveloperAimbot:Whitelist(<string> Player Name)
-	assert(self, "EXUNYS_AIMBOT-V3.Whitelist: Missing parameter #1 \"self\" <table>.")
-	assert(Username, "EXUNYS_AIMBOT-V3.Whitelist: Missing parameter #2 \"Username\" <string>.")
-
-	Username = FixUsername(Username)
-
-	assert(Username, "EXUNYS_AIMBOT-V3.Whitelist: User "..Username.." couldn't be found.")
-
-	local Index = tablefind(self.Blacklisted, Username)
-
-	assert(Index, "EXUNYS_AIMBOT-V3.Whitelist: User "..Username.." is not blacklisted.")
-
-	tableremove(self.Blacklisted, Index)
-end
-
-function Environment.GetClosestPlayer() -- ExunysDeveloperAimbot.GetClosestPlayer(<void>)
-	GetClosestPlayer()
-	local Value = Environment.Locked
-	CancelLock()
-
-	return Value
-end
-
-Environment.Load = Load -- ExunysDeveloperAimbot.Load()
-
-setmetatable(Environment, {__call = Load})
+--// Start loading the aimbot.
+Environment.Load()
 
 return Environment
