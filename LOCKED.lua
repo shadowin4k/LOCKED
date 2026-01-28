@@ -110,7 +110,7 @@ getgenv().ExunysDeveloperAimbot = {
 		LockPart = "Head", -- Body part to lock on
 
 		TriggerKey = Enum.UserInputType.MouseButton2,
-		Toggle = false
+		ToggleKey = Enum.KeyCode.C, -- GLOBAL TOGGLE
 	},
 
 	FOVSettings = {
@@ -292,40 +292,54 @@ local Load = function()
 		end
 	end)
 
-	ServiceConnections.InputBeganConnection = Connect(__index(UserInputService, "InputBegan"), function(Input)
-		local TriggerKey, Toggle = Settings.TriggerKey, Settings.Toggle
+	ServiceConnections.InputBeganConnection =
+	Connect(__index(UserInputService, "InputBegan"), function(Input, gp)
+		if gp or Typing then return end
 
-		if Typing then
+		local TriggerKey, ToggleKey, Toggle = Settings.TriggerKey, Settings.ToggleKey, Settings.Toggle
+
+		-- GLOBAL TOGGLE (C)
+		if Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode == ToggleKey then
+			Settings.Enabled = not Settings.Enabled
+			if not Settings.Enabled then
+				Running = false
+				CancelLock()
+				setrenderproperty(Environment.FOVCircle, "Visible", false)
+				setrenderproperty(Environment.FOVCircleOutline, "Visible", false)
+			end
 			return
 		end
 
-		if Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode == TriggerKey or Input.UserInputType == TriggerKey then
+		-- BLOCK INPUT WHEN DISABLED
+		if not Settings.Enabled then return end
+
+		-- TRIGGER KEY (RMB / custom)
+		if Input.UserInputType == TriggerKey
+			or (Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode == TriggerKey) then
+
 			if Toggle then
 				Running = not Running
-
-				if not Running then
-					CancelLock()
-				end
+				if not Running then CancelLock() end
 			else
 				Running = true
 			end
 		end
 	end)
 
-	ServiceConnections.InputEndedConnection = Connect(__index(UserInputService, "InputEnded"), function(Input)
-		local TriggerKey, Toggle = Settings.TriggerKey, Settings.Toggle
+ServiceConnections.InputEndedConnection =
+	Connect(__index(UserInputService, "InputEnded"), function(Input)
+		if Typing or Settings.Toggle or not Settings.Enabled then return end
 
-		if Toggle or Typing then
-			return
-		end
+		local TriggerKey = Settings.TriggerKey
 
-		if Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode == TriggerKey or Input.UserInputType == TriggerKey then
+		if Input.UserInputType == TriggerKey
+			or (Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode == TriggerKey) then
+
 			Running = false
 			CancelLock()
 		end
 	end)
-end
-
+	
 --// Typing Check
 
 ServiceConnections.TypingStartedConnection = Connect(__index(UserInputService, "TextBoxFocused"), function()
