@@ -121,7 +121,7 @@ task.spawn(function()
             RainbowColor = false,
             RainbowOutlineColor = false,
             Color = Color3fromRGB(255, 255, 255),
-            OutlineColor = Color3fromRGB(0, 0, 0),
+            OutlineColor = Color3.fromRGB(0, 0, 0),
             LockedColor = Color3fromRGB(255, 150, 150)
         },
         Blacklisted = {},
