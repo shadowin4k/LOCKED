@@ -112,7 +112,7 @@ getgenv().ExunysDeveloperAimbot = {
 		
 		-- NEW: Third-person settings
 		ThirdPersonSupport = true, -- Enable third-person camera handling
-		ThirdPersonSmoothness = 0.2, -- Smoothness for third-person camera (lower = smoother)
+		ThirdPersonSmoothness = 0.05, -- Smoothness for third-person camera (lower = smoother, 0 = instant)
 
 		TriggerKey = Enum.UserInputType.MouseButton2,
 		Toggle = false
@@ -239,21 +239,31 @@ local LockCameraThirdPerson = function(TargetPosition, Sensitivity)
 	if not Character then return end
 	
 	local HumanoidRootPart = FindFirstChild(Character, "HumanoidRootPart")
-	if not HumanoidRootPart then return end
+	local Head = FindFirstChild(Character, "Head")
+	if not HumanoidRootPart or not Head then return end
 	
 	local RootPosition = __index(HumanoidRootPart, "CFrame").Position
+	local HeadPosition = __index(Head, "Position")
 	local CameraPosition = __index(Camera, "CFrame").Position
 	
-	-- Calculate direction from character to target
-	local DirectionToTarget = (TargetPosition - RootPosition).Unit
-	
-	-- Calculate camera offset from character
-	local CameraOffset = CameraPosition - RootPosition
+	-- Calculate the current camera offset (distance and relative position from head)
+	local CameraOffset = CameraPosition - HeadPosition
 	local CameraDistance = CameraOffset.Magnitude
 	
-	-- Create new camera position maintaining the same distance but looking at target
-	local NewLookVector = DirectionToTarget
-	local NewCFrame = CFramenew(CameraPosition, TargetPosition)
+	-- Calculate direction from head to target
+	local DirectionToTarget = (TargetPosition - HeadPosition).Unit
+	
+	-- Calculate the up vector (try to maintain current camera's up direction)
+	local CurrentUp = __index(Camera, "CFrame").UpVector
+	
+	-- Create new camera CFrame: position it behind the head, looking at target
+	-- Maintain the same distance from head
+	local CameraRight = DirectionToTarget:Cross(CurrentUp).Unit
+	local CameraUp = CameraRight:Cross(DirectionToTarget).Unit
+	
+	-- Position camera at the same offset distance but aligned to look at target
+	local NewCameraPosition = HeadPosition - (DirectionToTarget * CameraDistance * 0.5) + (CameraUp * CameraDistance * 0.3)
+	local NewCFrame = CFramenew(NewCameraPosition, TargetPosition)
 	
 	if Sensitivity > 0 then
 		Animation = TweenService:Create(Camera, TweenInfonew(Sensitivity, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame = NewCFrame})
@@ -313,13 +323,14 @@ local Load = function()
 					mousemoverel((LockedPosition.X - GetMouseLocation(UserInputService).X) / Settings.Sensitivity2, (LockedPosition.Y - GetMouseLocation(UserInputService).Y) / Settings.Sensitivity2)
 				else
 					-- NEW: Check if third-person mode is enabled
-					local CameraMode = __index(__index(LocalPlayer, "CameraMode"), "Name")
-					local IsThirdPerson = Settings.ThirdPersonSupport and (
-						__index(Camera, "CFrame").Position - __index(__index(__index(LocalPlayer, "Character"), "Head"), "Position")
-					).Magnitude > 2
+					local Character = __index(LocalPlayer, "Character")
+					local Head = Character and FindFirstChild(Character, "Head")
+					local IsThirdPerson = Settings.ThirdPersonSupport and Head and (
+						(__index(Camera, "CFrame").Position - __index(Head, "Position")).Magnitude > 2
+					)
 					
 					if IsThirdPerson then
-						-- Use third-person camera lock
+						-- Use third-person camera lock with custom smoothness
 						LockCameraThirdPerson(LockedPosition_Vector3 + Offset, Settings.ThirdPersonSmoothness)
 					else
 						-- Use original first-person camera lock
