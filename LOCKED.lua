@@ -110,7 +110,7 @@ getgenv().ExunysDeveloperAimbot = {
 		LockPart = "Head", -- Body part to lock on
 
 		TriggerKey = Enum.UserInputType.MouseButton2,
-		ToggleKey = Enum.KeyCode.C, -- GLOBAL TOGGLE
+		Toggle = false
 	},
 
 	FOVSettings = {
@@ -292,54 +292,58 @@ local Load = function()
 		end
 	end)
 
-	ServiceConnections.InputBeganConnection =
-	Connect(__index(UserInputService, "InputBegan"), function(Input, gp)
-		if gp or Typing then return end
+	ServiceConnections.InputBeganConnection = Connect(__index(UserInputService, "InputBegan"), function(Input)
+		local TriggerKey, Toggle = Settings.TriggerKey, Settings.Toggle
 
-		local TriggerKey, ToggleKey, Toggle = Settings.TriggerKey, Settings.ToggleKey, Settings.Toggle
-
-		-- GLOBAL TOGGLE (C)
-		if Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode == ToggleKey then
-			Settings.Enabled = not Settings.Enabled
-			if not Settings.Enabled then
-				Running = false
-				CancelLock()
-				setrenderproperty(Environment.FOVCircle, "Visible", false)
-				setrenderproperty(Environment.FOVCircleOutline, "Visible", false)
-			end
+		if Typing then
 			return
 		end
 
-		-- BLOCK INPUT WHEN DISABLED
-		if not Settings.Enabled then return end
-
-		-- TRIGGER KEY (RMB / custom)
-		if Input.UserInputType == TriggerKey
-			or (Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode == TriggerKey) then
-
+		if Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode == TriggerKey or Input.UserInputType == TriggerKey then
 			if Toggle then
 				Running = not Running
-				if not Running then CancelLock() end
+
+				if not Running then
+					CancelLock()
+				end
 			else
 				Running = true
 			end
 		end
 	end)
 
-ServiceConnections.InputEndedConnection =
-	Connect(__index(UserInputService, "InputEnded"), function(Input)
-		if Typing or Settings.Toggle or not Settings.Enabled then return end
+	ServiceConnections.InputEndedConnection = Connect(__index(UserInputService, "InputEnded"), function(Input)
+		local TriggerKey, Toggle = Settings.TriggerKey, Settings.Toggle
 
-		local TriggerKey = Settings.TriggerKey
+		if Toggle or Typing then
+			return
+		end
 
-		if Input.UserInputType == TriggerKey
-			or (Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode == TriggerKey) then
-
+		if Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode == TriggerKey or Input.UserInputType == TriggerKey then
 			Running = false
 			CancelLock()
 		end
 	end)
 	
+	-- L KEY TOGGLE CONNECTION (SEPARATE FROM ORIGINAL INPUT HANDLERS)
+	ServiceConnections.LKeyToggleConnection = Connect(__index(UserInputService, "InputBegan"), function(Input)
+		if Typing then
+			return
+		end
+
+		if Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode == Enum.KeyCode.L then
+			Settings.Enabled = not Settings.Enabled
+			
+			if not Settings.Enabled then
+				Running = false
+				CancelLock()
+			end
+			
+			warn("[Aimbot] " .. (Settings.Enabled and "ENABLED" or "DISABLED"))
+		end
+	end)
+end
+
 --// Typing Check
 
 ServiceConnections.TypingStartedConnection = Connect(__index(UserInputService, "TextBoxFocused"), function()
@@ -391,7 +395,7 @@ function Environment.Whitelist(self, Username) -- METHOD | ExunysDeveloperAimbot
 
 	Username = FixUsername(Username)
 
-	assert(Username, "EXUNYS_AIMBOT-V3.Whitelist: User "..Username.." couldn't be found.")
+	assert(Username, "EXUNYS_AIMBOT-V3.Whitelist: User "..Username.." is not blacklisted.")
 
 	local Index = tablefind(self.Blacklisted, Username)
 
