@@ -111,8 +111,7 @@ getgenv().ExunysDeveloperAimbot = {
 		LockPart = "Head", -- Body part to lock on
 		
 		-- NEW: Third-person settings
-		ThirdPersonSupport = true, -- Enable third-person camera handling
-		ThirdPersonSmoothness = 0.05, -- Smoothness for third-person camera (lower = smoother, 0 = instant)
+		ThirdPersonSupport = true -- Enable third-person camera handling
 
 		TriggerKey = Enum.UserInputType.MouseButton2,
 		Toggle = false
@@ -330,8 +329,8 @@ local Load = function()
 					)
 					
 					if IsThirdPerson then
-						-- Use third-person camera lock with custom smoothness
-						LockCameraThirdPerson(LockedPosition_Vector3 + Offset, Settings.ThirdPersonSmoothness)
+						-- Use third-person camera lock with same sensitivity as first-person
+						LockCameraThirdPerson(LockedPosition_Vector3 + Offset, Settings.Sensitivity)
 					else
 						-- Use original first-person camera lock
 						if Settings.Sensitivity > 0 then
