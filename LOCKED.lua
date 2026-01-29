@@ -1,7 +1,6 @@
 --[[
 
 	Universal Aimbot Module by Exunys © CC0 1.0 Universal (2023 - 2024)
-	Modified for Third-Person Support
 	https://github.com/Exunys
 
 ]]
@@ -109,9 +108,6 @@ getgenv().ExunysDeveloperAimbot = {
 
 		LockMode = 1, -- 1 = CFrame; 2 = mousemoverel
 		LockPart = "Head", -- Body part to lock on
-		
-		-- NEW: Third-person settings
-		ThirdPersonSupport = true -- Enable third-person camera handling
 
 		TriggerKey = Enum.UserInputType.MouseButton2,
 		Toggle = false
@@ -232,46 +228,6 @@ local GetClosestPlayer = function()
 	end
 end
 
--- NEW: Third-person camera lock function
-local LockCameraThirdPerson = function(TargetPosition, Sensitivity)
-	local Character = __index(LocalPlayer, "Character")
-	if not Character then return end
-	
-	local HumanoidRootPart = FindFirstChild(Character, "HumanoidRootPart")
-	local Head = FindFirstChild(Character, "Head")
-	if not HumanoidRootPart or not Head then return end
-	
-	local RootPosition = __index(HumanoidRootPart, "CFrame").Position
-	local HeadPosition = __index(Head, "Position")
-	local CameraPosition = __index(Camera, "CFrame").Position
-	
-	-- Calculate the current camera offset (distance and relative position from head)
-	local CameraOffset = CameraPosition - HeadPosition
-	local CameraDistance = CameraOffset.Magnitude
-	
-	-- Calculate direction from head to target
-	local DirectionToTarget = (TargetPosition - HeadPosition).Unit
-	
-	-- Calculate the up vector (try to maintain current camera's up direction)
-	local CurrentUp = __index(Camera, "CFrame").UpVector
-	
-	-- Create new camera CFrame: position it behind the head, looking at target
-	-- Maintain the same distance from head
-	local CameraRight = DirectionToTarget:Cross(CurrentUp).Unit
-	local CameraUp = CameraRight:Cross(DirectionToTarget).Unit
-	
-	-- Position camera at the same offset distance but aligned to look at target
-	local NewCameraPosition = HeadPosition - (DirectionToTarget * CameraDistance * 0.5) + (CameraUp * CameraDistance * 0.3)
-	local NewCFrame = CFramenew(NewCameraPosition, TargetPosition)
-	
-	if Sensitivity > 0 then
-		Animation = TweenService:Create(Camera, TweenInfonew(Sensitivity, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame = NewCFrame})
-		Animation:Play()
-	else
-		__newindex(Camera, "CFrame", NewCFrame)
-	end
-end
-
 local Load = function()
 	OriginalSensitivity = __index(UserInputService, "MouseDeltaSensitivity")
 
@@ -321,27 +277,14 @@ local Load = function()
 				if Environment.Settings.LockMode == 2 then
 					mousemoverel((LockedPosition.X - GetMouseLocation(UserInputService).X) / Settings.Sensitivity2, (LockedPosition.Y - GetMouseLocation(UserInputService).Y) / Settings.Sensitivity2)
 				else
-					-- NEW: Check if third-person mode is enabled
-					local Character = __index(LocalPlayer, "Character")
-					local Head = Character and FindFirstChild(Character, "Head")
-					local IsThirdPerson = Settings.ThirdPersonSupport and Head and (
-						(__index(Camera, "CFrame").Position - __index(Head, "Position")).Magnitude > 2
-					)
-					
-					if IsThirdPerson then
-						-- Use third-person camera lock with same sensitivity as first-person
-						LockCameraThirdPerson(LockedPosition_Vector3 + Offset, Settings.Sensitivity)
+					if Settings.Sensitivity > 0 then
+						Animation = TweenService:Create(Camera, TweenInfonew(Environment.Settings.Sensitivity, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame = CFramenew(Camera.CFrame.Position, LockedPosition_Vector3 + Offset)})
+						Animation:Play()
 					else
-						-- Use original first-person camera lock
-						if Settings.Sensitivity > 0 then
-							Animation = TweenService:Create(Camera, TweenInfonew(Environment.Settings.Sensitivity, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame = CFramenew(Camera.CFrame.Position, LockedPosition_Vector3 + Offset)})
-							Animation:Play()
-						else
-							__newindex(Camera, "CFrame", CFramenew(Camera.CFrame.Position, LockedPosition_Vector3 + Offset))
-						end
-
-						__newindex(UserInputService, "MouseDeltaSensitivity", 0)
+						__newindex(Camera, "CFrame", CFramenew(Camera.CFrame.Position, LockedPosition_Vector3 + Offset))
 					end
+
+					__newindex(UserInputService, "MouseDeltaSensitivity", 0)
 				end
 
 				setrenderproperty(FOVCircle, "Color", FOVSettings.LockedColor)
@@ -420,7 +363,7 @@ function Environment.Exit(self) -- METHOD | ExunysDeveloperAimbot:Exit(<void>)
 		Disconnect(ServiceConnections[Index])
 	end
 
-	Load = nil; ConvertVector = nil; CancelLock = nil; GetClosestPlayer = nil; GetRainbowColor = nil; FixUsername = nil; LockCameraThirdPerson = nil
+	Load = nil; ConvertVector = nil; CancelLock = nil; GetClosestPlayer = nil; GetRainbowColor = nil; FixUsername = nil
 
 	self.FOVCircle:Remove()
 	self.FOVCircleOutline:Remove()
