@@ -1,6 +1,7 @@
 --[[
 
 	Universal Aimbot Module by Exunys © CC0 1.0 Universal (2023 - 2024)
+	Modified for Third-Person Support
 	https://github.com/Exunys
 
 ]]
@@ -108,6 +109,10 @@ getgenv().ExunysDeveloperAimbot = {
 
 		LockMode = 1, -- 1 = CFrame; 2 = mousemoverel
 		LockPart = "Head", -- Body part to lock on
+		
+		-- NEW: Third-person settings
+		ThirdPersonSupport = true, -- Enable third-person camera handling
+		ThirdPersonSmoothness = 0.2, -- Smoothness for third-person camera (lower = smoother)
 
 		TriggerKey = Enum.UserInputType.MouseButton2,
 		Toggle = false
@@ -228,6 +233,36 @@ local GetClosestPlayer = function()
 	end
 end
 
+-- NEW: Third-person camera lock function
+local LockCameraThirdPerson = function(TargetPosition, Sensitivity)
+	local Character = __index(LocalPlayer, "Character")
+	if not Character then return end
+	
+	local HumanoidRootPart = FindFirstChild(Character, "HumanoidRootPart")
+	if not HumanoidRootPart then return end
+	
+	local RootPosition = __index(HumanoidRootPart, "CFrame").Position
+	local CameraPosition = __index(Camera, "CFrame").Position
+	
+	-- Calculate direction from character to target
+	local DirectionToTarget = (TargetPosition - RootPosition).Unit
+	
+	-- Calculate camera offset from character
+	local CameraOffset = CameraPosition - RootPosition
+	local CameraDistance = CameraOffset.Magnitude
+	
+	-- Create new camera position maintaining the same distance but looking at target
+	local NewLookVector = DirectionToTarget
+	local NewCFrame = CFramenew(CameraPosition, TargetPosition)
+	
+	if Sensitivity > 0 then
+		Animation = TweenService:Create(Camera, TweenInfonew(Sensitivity, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame = NewCFrame})
+		Animation:Play()
+	else
+		__newindex(Camera, "CFrame", NewCFrame)
+	end
+end
+
 local Load = function()
 	OriginalSensitivity = __index(UserInputService, "MouseDeltaSensitivity")
 
@@ -277,14 +312,26 @@ local Load = function()
 				if Environment.Settings.LockMode == 2 then
 					mousemoverel((LockedPosition.X - GetMouseLocation(UserInputService).X) / Settings.Sensitivity2, (LockedPosition.Y - GetMouseLocation(UserInputService).Y) / Settings.Sensitivity2)
 				else
-					if Settings.Sensitivity > 0 then
-						Animation = TweenService:Create(Camera, TweenInfonew(Environment.Settings.Sensitivity, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame = CFramenew(Camera.CFrame.Position, LockedPosition_Vector3)})
-						Animation:Play()
+					-- NEW: Check if third-person mode is enabled
+					local CameraMode = __index(__index(LocalPlayer, "CameraMode"), "Name")
+					local IsThirdPerson = Settings.ThirdPersonSupport and (
+						__index(Camera, "CFrame").Position - __index(__index(__index(LocalPlayer, "Character"), "Head"), "Position")
+					).Magnitude > 2
+					
+					if IsThirdPerson then
+						-- Use third-person camera lock
+						LockCameraThirdPerson(LockedPosition_Vector3 + Offset, Settings.ThirdPersonSmoothness)
 					else
-						__newindex(Camera, "CFrame", CFramenew(Camera.CFrame.Position, LockedPosition_Vector3 + Offset))
-					end
+						-- Use original first-person camera lock
+						if Settings.Sensitivity > 0 then
+							Animation = TweenService:Create(Camera, TweenInfonew(Environment.Settings.Sensitivity, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame = CFramenew(Camera.CFrame.Position, LockedPosition_Vector3 + Offset)})
+							Animation:Play()
+						else
+							__newindex(Camera, "CFrame", CFramenew(Camera.CFrame.Position, LockedPosition_Vector3 + Offset))
+						end
 
-					__newindex(UserInputService, "MouseDeltaSensitivity", 0)
+						__newindex(UserInputService, "MouseDeltaSensitivity", 0)
+					end
 				end
 
 				setrenderproperty(FOVCircle, "Color", FOVSettings.LockedColor)
@@ -363,7 +410,7 @@ function Environment.Exit(self) -- METHOD | ExunysDeveloperAimbot:Exit(<void>)
 		Disconnect(ServiceConnections[Index])
 	end
 
-	Load = nil; ConvertVector = nil; CancelLock = nil; GetClosestPlayer = nil; GetRainbowColor = nil; FixUsername = nil
+	Load = nil; ConvertVector = nil; CancelLock = nil; GetClosestPlayer = nil; GetRainbowColor = nil; FixUsername = nil; LockCameraThirdPerson = nil
 
 	self.FOVCircle:Remove()
 	self.FOVCircleOutline:Remove()
